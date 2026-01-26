@@ -52,7 +52,7 @@ O objetivo é simples: sobreviver às waves de inimigos, derrotar minibosses e e
 
 1. Tenha o Rust instalado
 2. Clone o repositório
-3. Execute:
+3. Execute, na raiz do projeto:
 
 ```bash
 cargo run
@@ -71,3 +71,18 @@ src/
  ├── animation.rs       # Sistema de animação
  ├── collision.rs       # Colisão AABB
  └── star.rs            # Fundo animado
+
+### 📌 Observações
+
+Este projeto foi feito com foco em aprendizado, estrutura e feeling arcade.
+Sugestões e melhorias são bem-vindas.
+
+
+---
+
+Se quiser, próximo passo natural seria:
+- ajustar o README pra **portfólio**
+- escrever um **devlog**
+- ou lapidar o texto pra parecer projeto de game jam
+
+Diz qual.
