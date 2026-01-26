@@ -1,2 +1,58 @@
-# GalaxyForces-em-Rust
-I basically remastered the game, im now learning to program in Rust and i needed to update my own shooter game!
+# Galaxy Forces 🚀
+
+Galaxy Forces é um jogo arcade 2D no estilo **shoot ’em up**, desenvolvido em **Rust** utilizando a biblioteca **Macroquad**.
+
+O objetivo é simples: sobreviver às waves de inimigos, derrotar minibosses e encarar o boss final — com dificuldade escalando indefinidamente.
+
+---
+
+## 🎮 Gameplay
+
+- Controle da nave via **mouse**
+- Disparo contínuo
+- Waves progressivas com aumento de dificuldade
+- Sistema de inimigos com comportamentos distintos
+- Boss com movimento próprio e tiros
+- Loop infinito após o boss
+
+---
+
+## 👾 Tipos de inimigos
+
+- **Normal** — frágil, rápido
+- **Red** — mais resistente
+- **MiniBoss** — perseguição gradual ao player
+- **Boss** — grande, resistente, movimento pesado e tiros
+
+---
+
+## ✨ Features
+
+- Sistema de estados (Menu / Playing)
+- Spawner de inimigos por fase
+- Colisão AABB
+- Animações via sprite sheets
+- Explosões animadas
+- Camera shake e feedback visual ao dano
+- Dificuldade escalável por fase
+- Fundo animado com estrelas
+
+---
+
+## 🛠️ Tecnologias
+
+- **Rust**
+- **Macroquad**
+- Sprite sheets para animações
+- Fonte pixel-art (Press Start 2P)
+
+---
+
+## ▶️ Como rodar o projeto
+
+1. Tenha o Rust instalado
+2. Clone o repositório
+3. Execute:
+
+```bash
+cargo run
