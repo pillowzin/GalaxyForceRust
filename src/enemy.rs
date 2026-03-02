@@ -1,0 +1,270 @@
+use macroquad::prelude::*;
+use crate::animation::Animation;
+use crate::animation::gerar_frames;
+use crate::config::{SPRITE_SIZE, SCALE, INTERNAL_WIDTH, INTERNAL_HEIGHT};
+
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum EnemyKind {
+    Normal,
+    Red,
+    MiniBoss,
+    Boss,
+}
+
+#[derive(Clone)]
+pub struct Enemy {
+    pub kind: EnemyKind,
+    pub pos: Vec2,
+    pub speed: f32,
+    pub hp: i32,
+
+    wobble_count: u32,
+    target_x: f32,
+
+    pub texture: Texture2D,
+    pub anim: Animation,
+    pub vel: Vec2,
+    pub rotation: f32,
+}
+
+pub struct EnemyVisual {
+    pub texture: Texture2D,
+    pub frames: Vec<Rect>,
+}
+
+// definindo qual sprite aparece pelo tipo de inimigo
+pub fn visual_por_kind(
+    kind: EnemyKind,
+    normal_texture: Texture2D,
+    red_texture: Texture2D,
+    miniboss_texture: Texture2D,
+    boss_texture: Texture2D,
+) -> EnemyVisual {
+    match kind {
+        EnemyKind::Normal => EnemyVisual {
+            texture: normal_texture,
+            frames: gerar_frames(16.0, 16.0, 32.0, 16.0),
+        },
+        EnemyKind::Red => EnemyVisual {
+            texture: red_texture,
+            frames: gerar_frames(16.0, 16.0, 32.0, 16.0),
+        },
+        EnemyKind::MiniBoss => EnemyVisual {
+            texture: miniboss_texture,
+            frames: gerar_frames(16.0, 16.0, 32.0, 16.0),
+        },
+        EnemyKind::Boss => EnemyVisual {
+            texture: boss_texture, // por enquanto reutiliza enemy1
+            frames: gerar_frames(32.0, 32.0, 128.0, 32.0),
+        },
+    }
+}
+
+fn scale_for_kind(kind: EnemyKind) -> f32 {
+    match kind {
+        EnemyKind::Normal => 1.0,
+        EnemyKind::Red => 1.2,
+        EnemyKind::MiniBoss => 1.6,
+        EnemyKind::Boss => 2.0,
+    }
+}
+
+impl Enemy {
+    pub fn new(
+        kind: EnemyKind,
+        pos: Vec2,
+        speed: f32,
+        texture: Texture2D,
+        frames: Vec<Rect>,
+    ) -> Self {
+        let hp = match kind {
+            EnemyKind::Normal => 1,
+            EnemyKind::Red => 2,
+            EnemyKind::MiniBoss => 12,
+            EnemyKind::Boss => 40,
+        };
+
+        let target_x = pos.x + rand::gen_range(-50.0, 50.0);
+
+        Self {
+            kind,
+            pos,
+            speed,
+            hp,
+            wobble_count: rand::gen_range(0, 40),
+            target_x,
+            texture,
+            anim: Animation::new(frames, 0.12),
+
+            vel: vec2(0.0, 1.0),
+            rotation: 0.0,
+        }
+    }
+    
+    pub fn update_with_speed_mult(&mut self, speed_mult: f32, player_x: f32) {
+        if self.kind == EnemyKind::Boss {
+            let dt = get_frame_time();
+
+            let scale = scale_for_kind(self.kind);
+            let size = SPRITE_SIZE * SCALE * scale;
+
+            // movimento horizontal pesado
+            self.pos.x += self.speed * dt * 60.0;
+
+            let half = size * 0.5;
+            if self.pos.x - half < 0.0 {
+                self.pos.x = half;
+                self.speed = self.speed.abs();
+            }
+            if self.pos.x + half > INTERNAL_WIDTH as f32 {
+                self.pos.x = INTERNAL_WIDTH as f32 - half;
+                self.speed = -self.speed.abs();
+            }
+
+            // leve seno vertical
+            let t = get_time() as f32;
+            self.pos.y = 80.0 + (t * 1.5).sin() * 25.0;
+
+            self.rotation = (t * 0.5).sin() * 0.04;
+
+            self.anim.update();
+            return;
+        }
+
+        if self.kind == EnemyKind::MiniBoss {
+            let dt = get_frame_time();
+
+            let scale = scale_for_kind(self.kind);
+            let size = SPRITE_SIZE * SCALE * scale;
+
+            // centro do miniboss
+            let self_center = self.pos + vec2(size / 2.0, size / 2.0);
+
+            // centro do player (pivot real)
+            let player_center = vec2(player_x, INTERNAL_HEIGHT as f32 * 0.5);
+
+            // direção desejada (alvo)
+            let desired_dir = (player_center - self_center).normalize_or_zero();
+
+            // quanto ele "vira" por frame (quanto MENOR, mais pesado)
+            let turn_strength = 0.065;
+
+            // steering: mistura direção atual com a desejada
+            self.vel += desired_dir * turn_strength;
+            if self.vel.length() > 0.001 {
+                self.vel = self.vel.normalize();
+            }
+
+            // aceleração gradual
+            self.speed = (self.speed + 0.035).min(6.5);
+
+            // movimento
+            self.pos += self.vel * self.speed * dt * 60.0;
+
+            // rotação segue a direção ATUAL, não o alvo
+            self.rotation = self.vel.y.atan2(self.vel.x) + std::f32::consts::FRAC_PI_2;
+
+            self.anim.update();
+            return;
+        }
+
+        let dt = get_frame_time();
+        let time = get_time() as f32;
+
+        self.pos.y += self.speed * speed_mult * dt * 60.0
+            + (time * 10.0).sin() * 2.0;
+
+        self.wobble_count += 1;
+        if self.wobble_count >= 40 {
+            self.wobble_count = 0;
+
+            self.target_x = self.pos.x + rand::gen_range(-50.0, 50.0);
+            self.target_x = self
+                .target_x
+                .clamp(10.0, INTERNAL_WIDTH as f32 - 26.0);
+        }
+
+        self.pos.x += (self.target_x - self.pos.x) * 0.15;
+
+        if self.pos.y > INTERNAL_HEIGHT as f32 {
+            if self.kind != EnemyKind::MiniBoss && self.kind != EnemyKind::Boss {
+                self.pos.y = -100.0;
+                self.pos.x = rand::gen_range(10.0, INTERNAL_WIDTH as f32 - 26.0);
+                self.target_x = self.pos.x;
+            }
+        }
+        // self.rotation = std::f32::consts::PI;
+        self.rotation = std::f32::consts::PI
+            + (get_time() as f32 * 2.0).sin() * 0.065;
+
+        self.anim.update();
+    }
+
+    // pub fn update(&mut self) {
+    //     let dt = get_frame_time();
+
+    //     // movimento vertical + leve seno (igual ao pygame)
+    //     let time = get_time() as f32;
+    //     self.pos.y += self.speed * dt * 60.0
+    //         + (time * 10.0).sin() * 2.0;
+
+    //     // contador de wobble (≈40 frames)
+    //     self.wobble_count += 1;
+    //     if self.wobble_count >= 40 {
+    //         self.wobble_count = 0;
+
+    //         // alvo relativo ±50px
+    //         self.target_x = self.pos.x + rand::gen_range(-50.0, 50.0);
+    //         self.target_x = self
+    //             .target_x
+    //             .clamp(10.0, INTERNAL_WIDTH as f32 - 26.0);
+    //     }
+
+    //     // aproximação suave (igual ao original)
+    //     self.pos.x += (self.target_x - self.pos.x) * 0.15;
+
+    //     // respawn
+    //     if self.pos.y > INTERNAL_HEIGHT as f32{
+    //         self.pos.y = -100.0;
+    //         self.pos.x = rand::gen_range(10.0, INTERNAL_WIDTH as f32 - 26.0);
+    //         self.target_x = self.pos.x;
+    //     }
+
+    //     self.anim.update();
+    // }
+
+    pub fn hitbox(&self) -> Rect {
+        let scale = scale_for_kind(self.kind);
+        let size = SPRITE_SIZE * SCALE * scale;
+
+        Rect::new(
+            self.pos.x,
+            self.pos.y,
+            size,
+            size,
+        )
+    }
+
+    pub fn draw(&self) {
+        let scale = scale_for_kind(self.kind);
+        let size = SPRITE_SIZE * SCALE * scale;
+
+        draw_texture_ex(
+            &self.texture,
+            self.pos.x,
+            self.pos.y,
+            WHITE,
+            DrawTextureParams {
+                source: Some(self.anim.frame()),
+                dest_size: Some(vec2(size, size)),
+                rotation: self.rotation,
+                pivot: Some(vec2(
+                    self.pos.x + size / 2.0,
+                    self.pos.y + size / 2.0,
+                )),
+                ..Default::default()
+            },
+        );
+    }
+}
