@@ -8,7 +8,7 @@ pub struct AudioManager {
 
 impl AudioManager {
     pub async fn new() -> Self {
-        let theme = load_sound("audio/theme.wav").await.unwrap();
+        let theme = load_sound("audio/seila.wav").await.unwrap();
         let click = load_sound("audio/click.wav").await.unwrap();
 
         Self {

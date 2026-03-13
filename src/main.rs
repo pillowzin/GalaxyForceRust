@@ -17,6 +17,7 @@ mod explosion;
 mod star;
 mod enemy_bullet;
 mod state_paused;
+mod hud;
 
 use crate::crt_shader::load_crt_material;
 use std::mem;
@@ -65,6 +66,8 @@ async fn main() {
     let explosion_texture = load_texture("sprites/explosion.png").await.unwrap();
     let speaker_texture = load_texture("sprites/speaker.png").await.unwrap();
     speaker_texture.set_filter(FilterMode::Nearest);
+    let heart_texture = load_texture("sprites/heart.png").await.unwrap();
+    let skull_texture = load_texture("sprites/skull.png").await.unwrap();
 
     for tex in [
         &player_texture,
@@ -159,6 +162,8 @@ async fn main() {
                                 boss_texture.clone(),
                                 explosion_texture.clone(),
                                 explosion_frames.clone(),
+                                heart_texture.clone(),
+                                skull_texture.clone(),
                             )
                             .await,
                         );
@@ -208,20 +213,20 @@ async fn main() {
                 }
 
                 // --- DRAW ---
-                state.draw(&player, &pixel_font);
-
                 for star in stars.iter() {
                     star.draw(camera_offset);
                 }
+                state.draw(&player, &pixel_font);
+                state.draw_hud(&player, camera_offset);
             }
 
             GameState::Paused(state, pause) => {
 
-                state.draw(&player, &pixel_font);
-
                 for star in stars.iter() {
                     star.draw(camera_offset);
                 }
+                state.draw(&player, &pixel_font);
+                state.draw_hud(&player, camera_offset);
 
                 match pause.draw(&pixel_font, audio.music_muted) {
 

@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use crate::config::{INTERNAL_WIDTH, INTERNAL_HEIGHT};
 
 #[derive(Clone)]
 pub struct Star {
@@ -8,39 +9,47 @@ pub struct Star {
 }
 
 impl Star {
+
     pub fn new() -> Self {
+
         Self {
+
             pos: vec2(
-                rand::gen_range(0.0, screen_width()),
-                rand::gen_range(0.0, screen_height()),
+                rand::gen_range(0.0, INTERNAL_WIDTH as f32),
+                rand::gen_range(0.0, INTERNAL_HEIGHT as f32),
             ),
-            speed: rand::gen_range(30.0, 90.0), // velocidade real (dt)
-            size: rand::gen_range(1.0, 2.5),
+
+            speed: rand::gen_range(20.0, 80.0),
+            size: rand::gen_range(1.0, 2.0),
         }
     }
 
     pub fn update(&mut self) {
+
         let dt = get_frame_time();
 
-        self.pos.y += self.speed * dt
-            * (1.0 + (get_time() as f32 * 0.5).sin() * 0.02);
+        self.pos.y += self.speed * dt;
 
-        if self.pos.y > screen_height() {
+        if self.pos.y > INTERNAL_HEIGHT as f32 {
+
             self.pos.y = 0.0;
-            self.pos.x = rand::gen_range(0.0, screen_width());
+
+            self.pos.x = rand::gen_range(
+                0.0,
+                INTERNAL_WIDTH as f32,
+            );
         }
     }
 
     pub fn draw(&self, camera_offset: Vec2) {
-        let depth = (self.speed / 90.0).clamp(0.2, 1.0);
-        let alpha = depth.clamp(0.4, 1.0);
+
+        let depth = (self.speed / 80.0).clamp(0.2, 1.0);
 
         draw_circle(
             self.pos.x + camera_offset.x * depth,
             self.pos.y + camera_offset.y * depth,
             self.size,
-            Color::new(1.0, 1.0, 1.0, alpha),
+            WHITE,
         );
     }
-
 }

@@ -247,31 +247,5 @@ pub fn inimigos_para_fase(
             }
         }
     }
-
-    // DEBUG
-    let mut n = 0;
-    let mut r = 0;
-    let mut m = 0;
-    let mut b = 0;
-
-    for e in &enemies {
-        match e.kind {
-            EnemyKind::Normal => n += 1,
-            EnemyKind::Red => r += 1,
-            EnemyKind::MiniBoss => m += 1,
-            EnemyKind::Boss => b += 1,
-        }
-    }
-
-    println!(
-        "[WAVE {}] Normais:{} Vermelhos:{} Miniboss:{} Boss:{} TOTAL:{}",
-        stage,
-        n,
-        r,
-        m,
-        b,
-        enemies.len()
-    );
-
     enemies
 }

@@ -10,6 +10,11 @@ pub struct Player {
     shake_timer: f32,
     particles: Vec<ThrusterParticle>,
     last_hit_dir: Vec2,
+    pub hp: i32,
+    pub max_hp: i32,
+    pub heart_anim_frame: usize,
+    heart_anim_timer: f32,
+    pub heart_anim_index: i32,
 }
 
 impl Player {
@@ -22,6 +27,12 @@ impl Player {
             hit_timer: 0.0,
             shake_timer: 0.0,
             last_hit_dir: Vec2::ZERO,
+
+            hp: 3,
+            max_hp: 3,
+            heart_anim_frame: 0,
+            heart_anim_timer: 0.0,
+            heart_anim_index: -1,
         }
     }
     fn size(&self) -> f32 {
@@ -61,6 +72,33 @@ impl Player {
 
         // remover mortas
         self.particles.retain(|p| !p.dead());
+        
+        if self.heart_anim_index >= 0 {
+            const HEART_ANIM_FRAMES: usize = 8;
+            const HEART_ANIM_FRAME_TIME: f32 = 0.05;
+
+            self.heart_anim_timer += dt;
+            if self.heart_anim_timer >= HEART_ANIM_FRAME_TIME {
+                self.heart_anim_timer -= HEART_ANIM_FRAME_TIME;
+                self.heart_anim_frame += 1;
+
+                if self.heart_anim_frame >= HEART_ANIM_FRAMES {
+                    self.heart_anim_frame = 0;
+                    self.heart_anim_index = -1;
+                }
+            }
+        }
+    }
+
+    pub fn damage(&mut self) -> bool {
+        self.hp = (self.hp - 1).max(0);
+
+        // anima o coração que acabou de perder
+        self.heart_anim_index = self.hp;
+        self.heart_anim_frame = 0;
+        self.heart_anim_timer = 0.0;
+
+        self.hp <= 0
     }
 
     pub fn hitbox(&self) -> Rect {
@@ -130,5 +168,9 @@ impl Player {
         self.hit_timer = 0.0;
         self.shake_timer = 0.0;
         self.last_hit_dir = Vec2::ZERO;
+        self.heart_anim_frame = 0;
+        self.heart_anim_timer = 0.0;
+        self.heart_anim_index = -1;
+        self.hp = self.max_hp;
     }
 }
